@@ -29,20 +29,20 @@ import (
 )
 
 import (
-	"github.com/apache/dubbo-go/cluster"
-	"github.com/apache/dubbo-go/cluster/directory"
-	"github.com/apache/dubbo-go/cluster/router/chain"
-	"github.com/apache/dubbo-go/common"
-	"github.com/apache/dubbo-go/common/constant"
-	"github.com/apache/dubbo-go/common/extension"
-	"github.com/apache/dubbo-go/common/logger"
-	"github.com/apache/dubbo-go/config"
-	"github.com/apache/dubbo-go/config_center"
-	_ "github.com/apache/dubbo-go/config_center/configurator"
-	"github.com/apache/dubbo-go/protocol"
-	"github.com/apache/dubbo-go/protocol/protocolwrapper"
-	"github.com/apache/dubbo-go/registry"
-	"github.com/apache/dubbo-go/remoting"
+	"dubbo.apache.org/dubbo-go/v3/cluster"
+	"dubbo.apache.org/dubbo-go/v3/cluster/directory"
+	"dubbo.apache.org/dubbo-go/v3/cluster/router/chain"
+	"dubbo.apache.org/dubbo-go/v3/common"
+	"dubbo.apache.org/dubbo-go/v3/common/constant"
+	"dubbo.apache.org/dubbo-go/v3/common/extension"
+	"dubbo.apache.org/dubbo-go/v3/common/logger"
+	"dubbo.apache.org/dubbo-go/v3/config"
+	"dubbo.apache.org/dubbo-go/v3/config_center"
+	_ "dubbo.apache.org/dubbo-go/v3/config_center/configurator"
+	"dubbo.apache.org/dubbo-go/v3/protocol"
+	"dubbo.apache.org/dubbo-go/v3/protocol/protocolwrapper"
+	"dubbo.apache.org/dubbo-go/v3/registry"
+	"dubbo.apache.org/dubbo-go/v3/remoting"
 )
 
 func init() {
@@ -224,7 +224,7 @@ func (dir *RegistryDirectory) invokerCacheKey(event *registry.ServiceEvent) stri
 	referenceUrl := dir.GetDirectoryUrl().SubURL
 	newUrl := common.MergeURL(event.Service, referenceUrl)
 	event.Update(newUrl)
-	return newUrl.Key()
+	return newUrl.GetCacheInvokerMapKey()
 }
 
 // setNewInvokers groups the invokers from the cache first, then set the result to both directory and router chain.
@@ -317,7 +317,7 @@ func (dir *RegistryDirectory) toGroupInvokers() []protocol.Invoker {
 
 // uncacheInvoker will return abandoned Invoker, if no Invoker to be abandoned, return nil
 func (dir *RegistryDirectory) uncacheInvoker(url *common.URL) protocol.Invoker {
-	return dir.uncacheInvokerWithKey(url.Key())
+	return dir.uncacheInvokerWithKey(url.GetCacheInvokerMapKey())
 }
 
 func (dir *RegistryDirectory) uncacheInvokerWithKey(key string) protocol.Invoker {
@@ -356,7 +356,7 @@ func (dir *RegistryDirectory) cacheInvoker(url *common.URL) protocol.Invoker {
 }
 
 func (dir *RegistryDirectory) doCacheInvoker(newUrl *common.URL) (protocol.Invoker, bool) {
-	key := newUrl.Key()
+	key := newUrl.GetCacheInvokerMapKey()
 	if cacheInvoker, ok := dir.cacheInvokersMap.Load(key); !ok {
 		logger.Debugf("service will be added in cache invokers: invokers url is  %s!", newUrl)
 		newInvoker := extension.GetProtocol(protocolwrapper.FILTER).Refer(newUrl)
