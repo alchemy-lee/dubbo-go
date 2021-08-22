@@ -18,8 +18,8 @@
 package etcd
 
 import (
+	"encoding/json"
 	"strings"
-	"time"
 )
 
 import (
@@ -52,14 +52,25 @@ type etcdMetadataReport struct {
 
 // GetAppMetadata get metadata info from etcd
 func (e *etcdMetadataReport) GetAppMetadata(metadataIdentifier *identifier.SubscriberMetadataIdentifier) (*common.MetadataInfo, error) {
-	// TODO will implement
-	panic("implement me")
+	key := e.getNodeKey(metadataIdentifier)
+	data, err := e.client.Get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	info := &common.MetadataInfo{}
+	return info, json.Unmarshal([]byte(data), info)
 }
 
 // PublishAppMetadata publish metadata info to etcd
 func (e *etcdMetadataReport) PublishAppMetadata(metadataIdentifier *identifier.SubscriberMetadataIdentifier, info *common.MetadataInfo) error {
-	// TODO will implement
-	panic("implement me")
+	key := e.getNodeKey(metadataIdentifier)
+	value, err := json.Marshal(info)
+	if err == nil {
+		err = e.client.Put(key, string(value))
+	}
+
+	return err
 }
 
 // StoreProviderMetadata will store the metadata
@@ -134,7 +145,7 @@ type etcdMetadataReportFactory struct{}
 
 // CreateMetadataReport get the MetadataReport instance of etcd
 func (e *etcdMetadataReportFactory) CreateMetadataReport(url *common.URL) report.MetadataReport {
-	timeout, _ := time.ParseDuration(url.GetParam(constant.REGISTRY_TIMEOUT_KEY, constant.DEFAULT_REG_TIMEOUT))
+	timeout := url.GetParamDuration(constant.CONFIG_TIMEOUT_KEY, constant.DEFAULT_REG_TIMEOUT)
 	addresses := strings.Split(url.Location, ",")
 	client, err := gxetcd.NewClient(gxetcd.MetadataETCDV3Client, addresses, timeout, 1)
 	if err != nil {

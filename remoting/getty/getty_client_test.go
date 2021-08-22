@@ -28,7 +28,9 @@ import (
 
 import (
 	hessian "github.com/apache/dubbo-go-hessian2"
+
 	perrors "github.com/pkg/errors"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -297,7 +299,7 @@ func testGetUser61(t *testing.T, c *Client) {
 
 func testClient_AsyncCall(t *testing.T, client *Client) {
 	user := &User{}
-	lock := sync.Mutex{}
+	wg := sync.WaitGroup{}
 	request := remoting.NewRequest("2.0.2")
 	invocation := createInvocation("GetUser0", nil, nil, []interface{}{"4", nil, "username"},
 		[]reflect.Value{reflect.ValueOf("4"), reflect.ValueOf(nil), reflect.ValueOf("username")})
@@ -314,13 +316,13 @@ func testClient_AsyncCall(t *testing.T, client *Client) {
 		r := response.(remoting.AsyncCallbackResponse)
 		rst := *r.Reply.(*remoting.Response).Result.(*protocol.RPCResult)
 		assert.Equal(t, User{ID: "4", Name: "username"}, *(rst.Rest.(*User)))
-		lock.Unlock()
+		wg.Done()
 	}
-	lock.Lock()
+	wg.Add(1)
 	err := client.Request(request, 3*time.Second, rsp)
 	assert.NoError(t, err)
 	assert.Equal(t, User{}, *user)
-	time.Sleep(1 * time.Second)
+	wg.Done()
 }
 
 func InitTest(t *testing.T) (*Server, *common.URL) {
@@ -343,7 +345,6 @@ func InitTest(t *testing.T) (*Server, *common.URL) {
 			KeepAlivePeriod:  "120s",
 			TcpRBufSize:      262144,
 			TcpWBufSize:      65536,
-			PkgWQSize:        512,
 			TcpReadTimeout:   "4s",
 			TcpWriteTimeout:  "5s",
 			WaitTimeout:      "1s",
@@ -362,7 +363,6 @@ func InitTest(t *testing.T) (*Server, *common.URL) {
 			KeepAlivePeriod:  "120s",
 			TcpRBufSize:      262144,
 			TcpWBufSize:      65536,
-			PkgWQSize:        512,
 			TcpReadTimeout:   "1s",
 			TcpWriteTimeout:  "5s",
 			WaitTimeout:      "1s",
@@ -436,6 +436,8 @@ func (u *UserProvider) GetUser(ctx context.Context, req []interface{}, rsp *User
 }
 
 func (u *UserProvider) GetUser0(id string, k *User, name string) (User, error) {
+	// fix testClient_AsyncCall assertion bug(#1233)
+	time.Sleep(1 * time.Second)
 	return User{ID: id, Name: name}, nil
 }
 

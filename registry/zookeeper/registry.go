@@ -40,11 +40,6 @@ import (
 	"dubbo.apache.org/dubbo-go/v3/remoting/zookeeper"
 )
 
-const (
-	// RegistryZkClient zk client name
-	RegistryZkClient = "zk registry"
-)
-
 func init() {
 	extension.SetRegistry("zookeeper", newZkRegistry)
 }
@@ -74,12 +69,12 @@ func newZkRegistry(url *common.URL) (registry.Registry, error) {
 	}
 	r.InitBaseRegistry(url, r)
 
-	err = zookeeper.ValidateZookeeperClient(r, RegistryZkClient)
+	err = zookeeper.ValidateZookeeperClient(r, url.Location)
 	if err != nil {
 		return nil, err
 	}
 
-	r.WaitGroup().Add(1) //zk client start successful, then wg +1
+	r.WaitGroup().Add(1)
 	go zookeeper.HandleClientRestart(r)
 
 	r.listener = zookeeper.NewZkEventListener(r.client)
@@ -113,7 +108,7 @@ func newMockZkRegistry(url *common.URL, opts ...gxzookeeper.Option) (*zk.TestClu
 	if err != nil {
 		return nil, nil, err
 	}
-	r.WaitGroup().Add(1) // zk client start successful, then wg +1
+	r.WaitGroup().Add(1)
 	go zookeeper.HandleClientRestart(r)
 	r.InitListeners()
 	return c, r, nil
@@ -180,6 +175,7 @@ func (r *zkRegistry) DoUnsubscribe(conf *common.URL) (registry.Listener, error) 
 
 // CloseAndNilClient closes listeners and clear client
 func (r *zkRegistry) CloseAndNilClient() {
+	r.listener.Close()
 	r.client.Close()
 	r.client = nil
 }
@@ -317,4 +313,9 @@ func (r *zkRegistry) getCloseListener(conf *common.URL) (*RegistryConfigurationL
 	listener.Close()
 
 	return zkListener, nil
+}
+
+func (r *zkRegistry) handleClientRestart() {
+	r.WaitGroup().Add(1)
+	go zookeeper.HandleClientRestart(r)
 }

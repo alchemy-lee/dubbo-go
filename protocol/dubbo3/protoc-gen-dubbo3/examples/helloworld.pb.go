@@ -23,19 +23,22 @@ package main
 import (
 	context "context"
 	fmt "fmt"
+	math "math"
+)
+
+import (
+	tripleConstant "github.com/dubbogo/triple/pkg/common/constant"
+	dubbo3 "github.com/dubbogo/triple/pkg/triple"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 import (
 	"dubbo.apache.org/dubbo-go/v3/protocol"
 	dgrpc "dubbo.apache.org/dubbo-go/v3/protocol/dubbo3"
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
-	tripleConstant "github.com/dubbogo/triple/pkg/common/constant"
-	dubbo3 "github.com/dubbogo/triple/pkg/triple"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -277,6 +280,10 @@ func (s *GreeterProviderBase) SetProxyImpl(impl protocol.Invoker) {
 
 func (s *GreeterProviderBase) GetProxyImpl() protocol.Invoker {
 	return s.proxyImpl
+}
+
+func (c *GreeterProviderBase) Reference() string {
+	return "greeterImpl"
 }
 
 func _DUBBO_Greeter_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {

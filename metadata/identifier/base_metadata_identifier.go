@@ -18,7 +18,7 @@
 package identifier
 
 import (
-	"encoding/base64"
+	"net/url"
 )
 
 import (
@@ -74,13 +74,8 @@ func (mdi *BaseMetadataIdentifier) getFilePathKey(params ...string) string {
 func serviceToPath(serviceInterface string) string {
 	if serviceInterface == constant.ANY_VALUE {
 		return ""
-	} else {
-		decoded, err := base64.URLEncoding.DecodeString(serviceInterface)
-		if err != nil {
-			return ""
-		}
-		return string(decoded)
 	}
+	return url.PathEscape(serviceInterface)
 }
 
 // withPathSeparator return "/" + @path
@@ -94,6 +89,7 @@ func withPathSeparator(path string) string {
 // BaseApplicationMetadataIdentifier is the base implement of BaseApplicationMetadataIdentifier interface
 type BaseApplicationMetadataIdentifier struct {
 	Application string
+	Group       string
 }
 
 // getIdentifierKey returns string that format is application/param
